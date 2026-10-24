@@ -1,0 +1,8 @@
+# E5: all techniques together - combined effect.
+inherit: E1.yaml
+surprise:
+  enabled: true
+curriculum:
+  enabled: true
+sleep:
+  enabled: true

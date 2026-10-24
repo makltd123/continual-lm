@@ -1,0 +1,9 @@
+# The spec's full sizes (about twice the GPU time of the defaults):
+#   python run.py --all --preset configs/presets/full_tz.yaml --set output_dir=runs_full
+# Use a separate output_dir so full and reduced runs never mix in one report.
+stream:
+  portion_size: 1000
+sleep:
+  replay_examples: 1000
+eval:
+  quick_n: 300

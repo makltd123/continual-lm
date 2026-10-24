@@ -1,0 +1,169 @@
+# Shared defaults for all experiments. E0-E6 inherit this file and switch techniques on/off.
+# Every dataset and the model are pinned to a revision so results can be reproduced.
+
+seeds: [0, 1, 2]
+output_dir: runs
+device: auto                 # auto | cuda | cpu
+
+model:
+  name: Qwen/Qwen2.5-0.5B-Instruct
+  revision: 7ae557604adf67be50417f59c2c2f167def9a775
+  method: lora               # lora | full (full fine-tuning, control run)
+  precision: auto            # auto: fp32 weights + bf16/fp16 autocast on GPU; fp32 on CPU
+  dtype: float32             # weights in memory; bfloat16 halves RAM (chat.py / live.py --bf16)
+  lora:
+    r: 16
+    alpha: 32
+    dropout: 0.05
+    target_modules: all-linear
+
+data:
+  seed: 1234                 # fixes pools and splits; the same for every run and seed
+  cache_dir: data/cache
+  max_len: 320               # tokens per example, chat template included
+  pool_size: 6250            # per task -> 5000 / 625 / 625
+  split: [0.8, 0.1, 0.1]
+  sources:
+    tinystories:
+      repo: roneneldan/TinyStories
+      revision: f54c09fd23315a6f9c86f9dc80f725de7d8f9c64
+      file: data/validation-00000-of-00001-869c898b519ad725.parquet
+      format: parquet
+    squad:
+      repo: rajpurkar/squad
+      revision: 7b6d24c440a36b6815f21b70d25016731768db1f
+      file: plain_text/train-00000-of-00001.parquet
+      format: parquet
+    arxiv:
+      repo: CShorten/ML-ArXiv-Papers
+      revision: c878972daa0a5ec5f0d684354b6c8018f27d1316
+      file: ML-Arxiv-Papers.csv
+      format: csv
+    wikitext:
+      repo: Salesforce/wikitext
+      revision: b08601e04326c79dfdd32d625aee71d232d685c3
+      file: wikitext-2-raw-v1/test-00000-of-00001.parquet
+      format: parquet
+    dolly:
+      repo: databricks/databricks-dolly-15k
+      revision: bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a
+      file: databricks-dolly-15k.jsonl
+      format: json
+  # Tasks A-D are dialogues (chat: true): a user request and the assistant's answer; loss on the answer only.
+  tasks:
+    A: {source: tinystories, kind: lm, chat: true, min_chars: 200, max_chars: 1200}  # "write a story with words ..."
+    B: {source: squad, kind: qa, chat: true, max_context_chars: 800}                 # question about a passage
+    C: {source: arith, kind: qa, chat: true}                                         # arithmetic and logic
+    D: {source: arxiv, kind: lm, chat: true, min_chars: 300, max_chars: 1500, scan_rows: 20000}  # ML abstracts
+  # Measured after every portion but never trained on.
+  eval_tasks:
+    T0: {source: instructions, kind: inst, chat: true}        # task 0: instruction following, ~150 checks
+    G: {source: wikitext, kind: lm, n: 300, min_chars: 300}   # general language test: raw-text perplexity
+
+# Reduced to fit free GPU quotas, as the spec's risk table allows ("smaller portions"):
+# portion 500 instead of 1000, 200 validation examples per check instead of 300, sleep replay 500.
+# The spec's full sizes: --preset configs/presets/full_tz.yaml
+stream:
+  order: [A, B, C, D]
+  mode: sequential           # sequential | joint (E6)
+  portion_size: 500
+  portions_per_task: 5
+
+train:
+  lr: 1.0e-4
+  batch_size: 16
+  micro_batch_size: 8        # gradient accumulation to fit memory
+  epochs_per_portion: 1
+  weight_decay: 0.0
+  max_grad_norm: 1.0
+  loss_reduction: example    # example: each example weighs the same | token
+  head_chunk: 2048           # target tokens per piece of output layer + loss (smaller = less memory)
+
+replay:
+  enabled: false
+  ratio: 0.3                 # share of replayed examples in the mixed portion
+  capacity: 2000             # examples in the buffer, split equally between seen tasks
+  sample: loss               # loss: prefer examples with high loss | uniform
+  alpha: 1.0                 # sampling weight = loss ** alpha
+  noise_quantile: 0.98       # losses above this quantile are capped / dropped as likely noise
+  exclude_current_task: true # the buffer replays past tasks only
+
+# Self-generated replay of general instructions (reports/research.md, source 3): before training, the
+# original model answers general requests (Dolly, human-written, not the T0 test); its answers join the
+# buffer as task R, so replay also protects instruction following. Off in E0-E6.
+self_replay:
+  enabled: false
+  source: dolly
+  n: 300
+  categories: [open_qa, general_qa, classification, brainstorming, creative_writing]
+  max_chars: 300
+  max_new_tokens: 200
+  temperature: null       # null = greedy answers; a number = sampled with this temperature
+  top_p: null
+
+surprise:
+  enabled: false
+  mode: quantile             # quantile | absolute
+  low: 0.3                   # drop examples below this loss quantile (too easy)
+  high: 0.98                 # drop examples above this quantile (likely noise)
+  min_keep_frac: 0.1
+  log_samples: 3             # examples per category written for manual review
+
+curriculum:
+  enabled: false
+  measure: ref_loss          # ref_loss (base model loss) | length | native
+  scope: task                # task: whole task sorted, early portions easier | portion
+
+sleep:
+  enabled: false
+  every: 10                  # portions between sleep phases
+  replay_examples: 500       # one portion's worth
+  lr: 1.0e-4
+  merge: true                # merge the adapter into the weights and start a new one
+  buffer_keep_frac: 0.8      # share of the per-task quota kept by the cleanup
+  diversity_weight: 0.5      # 0 = keep highest-loss examples, 1 = keep most diverse
+  rollback: true
+  rollback_tolerance: 0.02   # roll back if seen tasks drop by more than 2% on average
+  cleanup: true              # re-score and prune the buffer after sleeping
+
+dpo:
+  enabled: false
+  tasks: [C]                 # tasks with a script verifier
+  n_prompts: 64
+  max_new_tokens: 16
+  beta: 0.1
+  lr: 1.0e-5
+  epochs: 1
+
+eval:
+  quick_n: 200               # validation examples per task after every portion
+  gen_max_new_tokens: 160    # answer length limit for the instruction test (T0)
+  repetition_penalty: 1.1    # the model's own generation setting, kept for T0 and DPO answers
+  retention_min: 0.9         # acceptance: T0 of the final model >= 90% of the control base
+  batch_size: 16
+  curve_every_steps: 20      # extra check of the current task during training (0 = off)
+  curve_n: 100
+
+logging:
+  wandb: false
+  wandb_project: ewai-continual
+
+# State of the learner (FR-14, FR-17): with checkpoints on, everything needed to continue - adapters,
+# replay buffer, counters, random state - is saved after every `every` portions; a restarted run resumes.
+checkpoint:
+  enabled: false
+  every: 1
+  keep: 3                    # newest checkpoints kept for rollback
+  export_dir: null           # export a plain Hugging Face model here when the stream ends (FR-15)
+  state_dir: null            # where run.py keeps the state (default: <run dir>/state)
+
+# Continuous mode, live.py (FR-13): learns from files dropped into an inbox folder.
+live:
+  portion_size: 32
+  poll_seconds: 10
+  eval_every: 0              # control evaluation every N portions (0 = never; it is slow on CPU)
+
+# Chat mode, chat.py (FR-16).
+chat:
+  learn_every: 8             # feedback examples collected before an automatic update
+  max_new_tokens: 256

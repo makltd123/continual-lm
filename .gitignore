@@ -1,0 +1,14 @@
+.venv/
+.cache/
+__pycache__/
+*.pyc
+.pytest_cache/
+data/cache/
+runs_smoke/
+reports/smoke/
+wandb/
+*.tmp
+runs/*/seed*/state/
+states/
+exported/
+inbox/

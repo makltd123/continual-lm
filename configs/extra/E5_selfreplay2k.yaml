@@ -1,0 +1,7 @@
+# Control for the second final model: E5 with self-generated replay of 2000 sampled answers (instead of
+# 300 greedy ones), at the reduced sizes of E0-E6, three seeds.
+inherit: E5_selfreplay.yaml
+self_replay:
+  n: 2000
+  temperature: 0.7
+  top_p: 0.8

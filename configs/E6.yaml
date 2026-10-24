@@ -1,0 +1,4 @@
+# E6: joint training on all tasks at once - upper bound on quality.
+inherit: base.yaml
+stream:
+  mode: joint

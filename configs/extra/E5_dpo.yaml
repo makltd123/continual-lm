@@ -1,0 +1,4 @@
+# Optional: E5 plus a DPO step on task C from the script verifier (FR-11).
+inherit: ../E5.yaml
+dpo:
+  enabled: true

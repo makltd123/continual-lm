@@ -1,0 +1,16 @@
+# The final model, second version. The first one (E5_final) replayed only 300 greedy self-generated answers;
+# repeated many times, they narrowed the model (perplexity on abstracts and on WikiText rose by 15-60%).
+# Here: 2000 answers sampled with the model's own temperature, and a buffer scaled to the doubled data.
+# On Kaggle, state and exported model go to the Output tab (/kaggle/working); locally override with
+#   --set checkpoint.state_dir=states/ewai-e5-v2 checkpoint.export_dir=exported/ewai-e5-v2
+inherit: E5_final.yaml
+name: E5_final_v2
+self_replay:
+  n: 2000
+  temperature: 0.7
+  top_p: 0.8
+replay:
+  capacity: 4000
+checkpoint:
+  state_dir: /kaggle/working/E5_final_v2/state
+  export_dir: /kaggle/working/E5_final_v2/model

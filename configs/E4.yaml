@@ -1,0 +1,4 @@
+# E4: E1 + sleep phase - tests H4.
+inherit: E1.yaml
+sleep:
+  enabled: true

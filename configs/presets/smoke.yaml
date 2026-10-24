@@ -1,0 +1,35 @@
+# Quick end-to-end check of the whole pipeline on a tiny random Qwen2 model (runs on CPU in minutes).
+# The numbers it produces mean nothing; it only proves every code path runs.
+#   python run.py --all --preset configs/presets/smoke.yaml --seeds 0
+
+output_dir: runs_smoke
+model:
+  name: trl-internal-testing/tiny-Qwen2ForCausalLM-2.5
+  revision: ce8d0bf270b28c8fab026ced69fe8aa14b0f0eda
+data:
+  max_len: 96
+  pool_size: 100
+  tasks:
+    D: {scan_rows: 2000}
+  eval_tasks:
+    T0: {n: 12}
+    G: {n: 12}
+stream:
+  portion_size: 16
+  portions_per_task: 2
+train:
+  batch_size: 8
+  micro_batch_size: 4
+replay:
+  capacity: 40
+sleep:
+  every: 3
+  replay_examples: 16
+dpo:
+  n_prompts: 8
+eval:
+  quick_n: 10
+  batch_size: 8
+  curve_every_steps: 1
+  curve_n: 5
+  gen_max_new_tokens: 12

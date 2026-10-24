@@ -1,0 +1,5 @@
+# Control for the final model: E5 plus self-generated replay of general instructions.
+# Compared with E5 it shows whether self-replay keeps instruction following (task 0) above 90% of the base.
+inherit: ../E5.yaml
+self_replay:
+  enabled: true

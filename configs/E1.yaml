@@ -1,0 +1,4 @@
+# E1: E0 + replay (30%) - tests H1.
+inherit: base.yaml
+replay:
+  enabled: true

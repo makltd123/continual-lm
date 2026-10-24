@@ -1,0 +1,35 @@
+# A small but real check on CPU: SmolLM2-135M-Instruct, short sequences, small portions and a higher
+# learning rate, so learning and forgetting show up within minutes. Not a substitute for the
+# real experiments (different model, far less data).
+#   python run.py configs/E0.yaml configs/E1.yaml --preset configs/presets/cpu_check.yaml --seeds 0
+
+output_dir: runs_smoke/cpu_check
+model:
+  name: HuggingFaceTB/SmolLM2-135M-Instruct
+  revision: 12fd25f77366fa6b3b4b768ec3050bf629380bac
+data:
+  max_len: 160
+  pool_size: 400
+  tasks:
+    D: {scan_rows: 4000}
+  eval_tasks:
+    T0: {n: 40}
+    G: {n: 32}
+stream:
+  portion_size: 96
+  portions_per_task: 2
+train:
+  lr: 1.0e-3
+  batch_size: 8
+  micro_batch_size: 8
+replay:
+  capacity: 200
+sleep:
+  every: 3
+  replay_examples: 64
+eval:
+  quick_n: 40
+  batch_size: 16
+  curve_every_steps: 4
+  curve_n: 20
+  gen_max_new_tokens: 64

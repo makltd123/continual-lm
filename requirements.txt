@@ -1,0 +1,15 @@
+# Versions the code was tested with. Every run also records the versions it actually used in meta.json.
+# torch is not pinned: on Colab/Kaggle keep the preinstalled CUDA build (any torch >= 2.4 works).
+torch>=2.4
+transformers==5.19.0
+peft==0.21.2
+datasets==5.1.0
+huggingface-hub==2.2.0
+numpy==2.5.4
+pyyaml==6.0.3
+matplotlib==3.11.2
+psutil==7.2.2
+pytest==9.1.1
+# Optional: wandb (set logging.wandb: true in a config)
+# Note: peft fails if an old torchao (< 0.16) is installed, as on Colab. The project does not use
+# torchao, so remove it: pip uninstall -y torchao

@@ -1,0 +1,6 @@
+# Optional control: E0 with full fine-tuning instead of LoRA (see reports/research.md, source 3).
+inherit: ../E0.yaml
+model:
+  method: full
+train:
+  lr: 1.0e-5

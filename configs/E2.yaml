@@ -1,0 +1,4 @@
+# E2: E1 + selection by surprise - tests H2.
+inherit: E1.yaml
+surprise:
+  enabled: true

@@ -1,0 +1,19 @@
+# The final model (main result of the project): E5 - all techniques together - on the spec's full
+# sizes, one seed, with its state saved after every portion. Trained by the continuous mode:
+#   python live.py --config configs/final/E5_final.yaml --state states/ewai-e5 --stream builtin \
+#                  --export exported/ewai-e5
+inherit: ../E5.yaml
+name: E5_final
+seeds: [0]
+stream:
+  portion_size: 1000
+sleep:
+  replay_examples: 1000
+eval:
+  quick_n: 300
+checkpoint:
+  enabled: true
+# E0 lost ~18% of instruction following (task 0) and E5 replays only tasks A-D, so the final model also
+# replays the original model's own answers to general requests. Final decision after E5 / E5_selfreplay.
+self_replay:
+  enabled: true

@@ -1,0 +1,4 @@
+# E3: E1 + curriculum (easy to hard) - tests H3.
+inherit: E1.yaml
+curriculum:
+  enabled: true
