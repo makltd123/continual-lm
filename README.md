@@ -42,10 +42,19 @@ print(tok.decode(out[0, inputs["input_ids"].shape[1]:], skip_special_tokens=True
 
 It runs on a CPU: an answer takes from a few seconds to half a minute.
 
-The **learner state** (adapters, replay buffer, counters) that `chat.py` and `live.py` continue from is **not published**, only the exported weights. To teach the model with your corrections or your own data you need a state, and you create one by training it yourself with the command in the next section (a 16 GB GPU, see "Resources"). Then:
+To keep teaching it, `chat.py` and `live.py` need the **learner state** (adapters, replay buffer, counters). The state of the final model (checkpoint `ckpt-000020`, about 105 MB) is in the `state/` folder of the same Hugging Face repository:
 
-1. Chat with learning from your corrections: `python chat.py --state states/ewai-e5`. With little RAM (8 GB), add `--low-memory` to halve the model's memory. Write each message on one line.
-2. Keep training it on your own data: `python live.py --state states/ewai-e5 --inbox inbox`.
+```bash
+pip install huggingface_hub
+python -c "from huggingface_hub import snapshot_download; snapshot_download('makltd1/continual-lm', allow_patterns='state/*', local_dir='download')"
+```
+
+The Qwen2.5-0.5B-Instruct base model and the pinned datasets are downloaded on the first run. Then:
+
+1. Chat with learning from your corrections: `python chat.py --state download/state`. With little RAM (8 GB), add `--low-memory` to halve the model's memory. Write each message on one line.
+2. Keep training it on your own data: `python live.py --state download/state --inbox inbox`.
+
+Both commands write into the state folder, so copy it first if you want to keep the original. The replay buffer in `state/` holds excerpts of the training datasets (640 examples per task) under their own licenses, listed on the [model page](https://huggingface.co/makltd1/continual-lm). Other commands below use `states/ewai-e5` as an example state folder; any state folder works.
 
 ## The final model (E5)
 
