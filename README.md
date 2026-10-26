@@ -239,3 +239,7 @@ reports/        # research.md, summary tables and plots
 tests/          # tests
 run.py, report.py, live.py, chat.py, export.py
 ```
+
+---
+
+Author: [Fedor Makovskiy](https://fedor.alqira.ru), AI developer. Services and projects with quality metrics: [fedor.alqira.ru](https://fedor.alqira.ru).

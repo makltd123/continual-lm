@@ -239,3 +239,7 @@ reports/        # research.md, сводные таблицы и графики
 tests/          # тесты
 run.py, report.py, live.py, chat.py, export.py
 ```
+
+---
+
+Автор: [Федор Маковский](https://fedor.alqira.ru), ИИ-разработчик. Услуги и проекты с цифрами качества: [fedor.alqira.ru](https://fedor.alqira.ru).
